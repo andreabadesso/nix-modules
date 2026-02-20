@@ -54,6 +54,17 @@ Zsh + prezto configuration with Obsidian Aurora prompt.
 - Vim keybindings
 - Directory shortcuts (`~dev`, `~myio`, `~hathor`)
 
+### Terminal
+
+Ghostty terminal configuration with Obsidian Aurora theme.
+
+**Features:**
+- JetBrainsMono Nerd Font
+- Obsidian Aurora color palette
+- Window opacity and blur
+- Clipboard integration
+- Custom padding and window decorations
+
 ## Usage
 
 ### As a Flake Input
@@ -84,6 +95,7 @@ Zsh + prezto configuration with Obsidian Aurora prompt.
     inputs.nix-modules.homeManagerModules.tmux
     inputs.nix-modules.homeManagerModules.git
     inputs.nix-modules.homeManagerModules.shell
+    inputs.nix-modules.homeManagerModules.terminal
   ];
 
   programs.andrevim.enable = true;
@@ -118,7 +130,9 @@ nix-modules/
 │   │   └── default.nix
 │   ├── git/                     # Git configuration
 │   │   └── default.nix
-│   └── shell/                   # Shell configuration
+│   ├── shell/                   # Shell configuration
+│   │   └── default.nix
+│   └── terminal/                # Terminal configuration
 │       └── default.nix
 └── packages/
     ├── default.nix

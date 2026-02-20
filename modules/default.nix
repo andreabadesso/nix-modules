@@ -3,4 +3,5 @@
   tmux = ./tmux;
   git = ./git;
   shell = ./shell;
+  terminal = ./terminal;
 }
