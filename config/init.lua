@@ -1,0 +1,37 @@
+require('colors')
+require('sets')
+require('remaps')
+require('keymaps')
+
+-- Core plugins - load immediately
+require('plugins/lsp')
+require('plugins/treesitter')
+require('plugins/surround')
+require('plugins/conform')
+require('plugins/autopairs')
+
+-- UI plugins - load immediately
+require('plugins/telescope')
+require('plugins/neo-tree')
+require('plugins/oil')
+require('plugins/fugitive')
+require('plugins/gitsigns')
+require('plugins/dressing')
+require('plugins/undotree')
+require('plugins/coverage')
+require('plugins/claude-code')
+require('plugins/render-markdown')
+require('plugins/which-key')
+require('plugins/noice')
+require('plugins/lualine')
+require('plugins/flash')
+require('plugins/harpoon')
+require('plugins/fidget')
+
+-- Heavy plugins - lazy load after startup
+vim.defer_fn(function()
+  require('plugins/trouble')
+  require('plugins/diffview')
+  require('plugins/neotest')
+  require('plugins/toggleterm')
+end, 100)
