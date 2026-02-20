@@ -1,5 +1,4 @@
-{ nixpkgs-unstable }:
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, nixpkgs-unstable, ... }:
 
 let
   cfg = config.programs.andrevim;
