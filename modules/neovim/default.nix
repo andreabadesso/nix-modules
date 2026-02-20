@@ -57,7 +57,6 @@ in
       ];
 
       plugins = with pkgs.vimPlugins; [
-        nvim-lspconfig
         fidget-nvim
         blink-cmp
         luasnip

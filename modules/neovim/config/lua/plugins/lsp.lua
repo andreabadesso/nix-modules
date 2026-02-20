@@ -1,54 +1,13 @@
 -- Language servers are managed through Nix (see nvim.nix extraPackages)
-local servers = {
-  ts_ls = {
-    settings = {
-      typescript = {
-        inlayHints = {
-          includeInlayParameterNameHints = "all",
-          includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-          includeInlayFunctionParameterTypeHints = true,
-          includeInlayVariableTypeHints = true,
-          includeInlayPropertyDeclarationTypeHints = true,
-          includeInlayFunctionLikeReturnTypeHints = true,
-        },
-      },
-      javascript = {
-        inlayHints = {
-          includeInlayParameterNameHints = "all",
-          includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-          includeInlayFunctionParameterTypeHints = true,
-          includeInlayVariableTypeHints = true,
-          includeInlayPropertyDeclarationTypeHints = true,
-          includeInlayFunctionLikeReturnTypeHints = true,
-        },
-      },
-    },
-  },
-  -- eslint LSP not available in nixpkgs - using eslint_d via conform.nvim instead
-  jsonls = {},
-  lua_ls = {
-    settings = {
-      Lua = {
-        runtime = {
-          version = 'LuaJIT'
-        },
-        diagnostics = {
-          globals = {'vim'},
-        },
-        workspace = {
-          library = vim.api.nvim_get_runtime_file("", true),
-        },
-        telemetry = {
-          enable = false,
-        },
-      },
-    },
-  },
-  nil_ls = {}, -- Nix LSP
-}
+-- Using native vim.lsp.config (Neovim 0.11+) instead of deprecated lspconfig
 
--- Get capabilities from blink.cmp
-local capabilities = require('blink.cmp').get_lsp_capabilities()
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+
+-- Get capabilities from blink.cmp if available
+local has_blink, blink = pcall(require, 'blink.cmp')
+if has_blink then
+  capabilities = blink.get_lsp_capabilities(capabilities)
+end
 
 local on_attach = function(client, bufnr)
   local opts = { noremap=true, silent=true, buffer=bufnr }
@@ -59,37 +18,79 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
   vim.keymap.set('n', '<leader>vws', vim.lsp.buf.workspace_symbol, opts)
   vim.keymap.set('n', '<leader>vd', vim.diagnostic.open_float, opts)
-  -- Fixed: [d goes to previous, ]d goes to next
   vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
   vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
   vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
   vim.keymap.set('n', '<leader>rf', '<cmd>Telescope lsp_references<cr>', opts)
-  -- Code actions
   vim.keymap.set({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, opts)
-  -- Toggle inlay hints
   vim.keymap.set('n', '<leader>ih', function()
     vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }), { bufnr = bufnr })
   end, { buffer = bufnr, desc = "Toggle inlay hints" })
 
-  -- Enable completion triggered by <c-x><c-o>
   vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
 end
 
-local function setup(server)
-  local server_opts = vim.tbl_deep_extend("force", {
-    on_attach = on_attach,
-    capabilities = capabilities,
-  }, servers[server] or {})
+-- Configure LSP servers using native vim.lsp.config
+vim.lsp.config('ts_ls', {
+  on_attach = on_attach,
+  capabilities = capabilities,
+  settings = {
+    typescript = {
+      inlayHints = {
+        includeInlayParameterNameHints = "all",
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+      },
+    },
+    javascript = {
+      inlayHints = {
+        includeInlayParameterNameHints = "all",
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+      },
+    },
+  },
+})
 
-  require("lspconfig")[server].setup(server_opts)
-end
+vim.lsp.config('jsonls', {
+  on_attach = on_attach,
+  capabilities = capabilities,
+})
 
--- Setup all servers directly since they're managed by Nix
-for server, server_opts in pairs(servers) do
-  if server_opts then
-    setup(server)
-  end
-end
+vim.lsp.config('lua_ls', {
+  on_attach = on_attach,
+  capabilities = capabilities,
+  settings = {
+    Lua = {
+      runtime = {
+        version = 'LuaJIT'
+      },
+      diagnostics = {
+        globals = {'vim'},
+      },
+      workspace = {
+        library = vim.api.nvim_get_runtime_file("", true),
+      },
+      telemetry = {
+        enable = false,
+      },
+    },
+  },
+})
+
+vim.lsp.config('nil_ls', {
+  on_attach = on_attach,
+  capabilities = capabilities,
+})
+
+-- Enable the language servers
+vim.lsp.enable({'ts_ls', 'jsonls', 'lua_ls', 'nil_ls'})
 
 -- Load snippets for blink.cmp
 require('luasnip.loaders.from_vscode').lazy_load()
@@ -117,7 +118,7 @@ require('blink.cmp').setup({
     default = { 'lsp', 'path', 'snippets', 'buffer' },
   },
   cmdline = {
-    enabled = false, -- Disable cmdline completion
+    enabled = false,
   },
   completion = {
     accept = {
