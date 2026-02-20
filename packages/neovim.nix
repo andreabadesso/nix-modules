@@ -95,7 +95,7 @@ let
     withRuby = false;
     inherit plugins;
     customRC = ''
-      luafile ${./config/init.lua}
+      luafile ${../modules/neovim/config/init.lua}
     '';
   };
 in
@@ -105,12 +105,12 @@ pkgs.wrapNeovimUnstable pkgs.neovim-unwrapped (neovimConfig // {
     "--set" "XDG_CONFIG_HOME" (pkgs.symlinkJoin {
       name = "andrevim-config";
       paths = [
-        (pkgs.writeTextDir "nvim/init.lua" (builtins.readFile ./config/init.lua))
+        (pkgs.writeTextDir "nvim/init.lua" (builtins.readFile ../modules/neovim/config/init.lua))
         (pkgs.symlinkJoin {
           name = "nvim-lua";
           paths = [ (pkgs.runCommand "nvim-lua-config" {} ''
             mkdir -p $out/nvim/lua
-            cp -r ${./config/lua}/* $out/nvim/lua/
+            cp -r ${../modules/neovim/config/lua}/* $out/nvim/lua/
           '') ];
         })
       ];

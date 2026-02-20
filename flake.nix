@@ -1,5 +1,5 @@
 {
-  description = "Andre's Neovim configuration";
+  description = "Andre's Nix modules collection";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
@@ -12,21 +12,19 @@
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
+      # Individual home-manager modules (can import just one)
+      homeManagerModules = import ./modules;
+
+      # Standalone packages
       packages = forAllSystems (system:
         let
           pkgs = import nixpkgs { inherit system; };
-        in
-        {
-          default = import ./package.nix {
-            inherit pkgs;
-            pkgs-unstable = import nixpkgs-unstable {
-              inherit system;
-              config.allowUnfree = true;
-            };
+          pkgs-unstable = import nixpkgs-unstable {
+            inherit system;
+            config.allowUnfree = true;
           };
-        }
+        in
+        import ./packages { inherit pkgs pkgs-unstable; }
       );
-
-      homeManagerModules.default = import ./module.nix { inherit nixpkgs-unstable; };
     };
 }
