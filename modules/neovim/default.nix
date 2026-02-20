@@ -15,7 +15,7 @@ let
       owner = "NickvanDyke";
       repo = "opencode.nvim";
       rev = "main";
-      sha256 = "sha256-wVZYTjvr9eN5RXiDnqq+t4rtozjqiMv15tRnKaQy9YU=";
+      sha256 = "sha256-kWdc4HKPIHQv/OX2LrMotLp/l6HNrsmqSPtGV7y70Y8=";
     };
   };
 in

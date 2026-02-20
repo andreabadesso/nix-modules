@@ -1,3 +1,4 @@
 {
   neovim = ./neovim;
+  tmux = ./tmux;
 }
