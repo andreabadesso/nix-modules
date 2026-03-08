@@ -52,7 +52,7 @@ in
         nodePackages.eslint_d
         elixir
         erlang
-        beamPackages.expert
+        pkgs.beamPackages.expert
         stylua
         black
         nixpkgs-fmt
