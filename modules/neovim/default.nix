@@ -50,6 +50,7 @@ in
         nodePackages.vscode-langservers-extracted
         nodePackages.prettier
         nodePackages.eslint_d
+        elixir-ls
         stylua
         black
         nixpkgs-fmt
@@ -77,6 +78,8 @@ in
           p.markdown
           p.html
           p.css
+          p.elixir
+          p.heex
         ]))
         nvim-treesitter-context
         nvim-treesitter-textobjects

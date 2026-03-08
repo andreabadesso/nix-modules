@@ -12,6 +12,8 @@ require("conform").setup({
     html = { "prettier" },
     css = { "prettier" },
     nix = { "nixpkgs_fmt" },
+    elixir = { "mix" },
+    heex = { "mix" },
   },
   -- format_on_save disabled - use <leader>fm to manually format
   -- format_on_save = {

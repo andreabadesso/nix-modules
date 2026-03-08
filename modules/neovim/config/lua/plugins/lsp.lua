@@ -89,8 +89,14 @@ vim.lsp.config('nil_ls', {
   capabilities = capabilities,
 })
 
+vim.lsp.config('elixirls', {
+  on_attach = on_attach,
+  capabilities = capabilities,
+  cmd = { 'elixir-ls' },
+})
+
 -- Enable the language servers
-vim.lsp.enable({'ts_ls', 'jsonls', 'lua_ls', 'nil_ls'})
+vim.lsp.enable({'ts_ls', 'jsonls', 'lua_ls', 'nil_ls', 'elixirls'})
 
 -- Load snippets for blink.cmp
 require('luasnip.loaders.from_vscode').lazy_load()
