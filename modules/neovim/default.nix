@@ -50,6 +50,8 @@ in
         nodePackages.vscode-langservers-extracted
         nodePackages.prettier
         nodePackages.eslint_d
+        elixir
+        erlang
         elixir-ls
         stylua
         black
