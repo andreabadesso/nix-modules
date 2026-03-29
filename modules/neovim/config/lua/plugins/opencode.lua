@@ -117,8 +117,3 @@ vim.keymap.set("n", "<leader>Z", function() Snacks.zen.zoom() end, { desc = "Tog
 vim.keymap.set("n", "]]", function() Snacks.words.jump(vim.v.count1) end, { desc = "Next reference" })
 vim.keymap.set("n", "[[", function() Snacks.words.jump(-vim.v.count1) end, { desc = "Prev reference" })
 
--- Setup opencode.nvim
-require("opencode").setup({
-  -- Use default configuration
-  -- Full config options available in lua/opencode/config.lua
-})

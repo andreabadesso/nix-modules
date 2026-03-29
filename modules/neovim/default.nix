@@ -8,16 +8,6 @@ let
     config.allowUnfree = true;
   };
 
-  opencode-nvim = pkgs.vimUtils.buildVimPlugin {
-    pname = "opencode.nvim";
-    version = "2024-11-07";
-    src = pkgs.fetchFromGitHub {
-      owner = "NickvanDyke";
-      repo = "opencode.nvim";
-      rev = "main";
-      sha256 = "sha256-kWdc4HKPIHQv/OX2LrMotLp/l6HNrsmqSPtGV7y70Y8=";
-    };
-  };
 in
 {
   options.programs.andrevim = {
@@ -119,7 +109,6 @@ in
         snacks-nvim
         render-markdown-nvim
         pkgs-unstable.vimPlugins.claudecode-nvim
-        opencode-nvim
       ];
 
       extraLuaConfig = builtins.readFile ./config/init.lua;
