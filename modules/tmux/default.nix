@@ -12,8 +12,8 @@
     extraConfig = ''
       set -g default-command "${pkgs.zsh}/bin/zsh"
 
-      set -g focus-events off
-      set -sg focus-events off
+      set -g focus-events on
+      set -sg focus-events on
 
       # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       # OBSIDIAN AURORA THEME - Status Bar
@@ -89,6 +89,8 @@
       bind - split-window -v -c "#{pane_current_path}"
 
       bind c new-window -c "#{pane_current_path}"
+
+      bind N run-shell 'tmux rename-window "$(basename \"#{pane_current_path}\")"'
 
       bind r source-file ~/.config/tmux/tmux.conf \; display-message "Config reloaded"
     '';
