@@ -227,9 +227,10 @@
       # IMPORTANT: continuum implements its periodic save by prepending a `#(…)`
       # interpolation to status-right when its plugin script runs. home-manager
       # sources plugins *before* extraConfig, so the `set -g status-right`
-      # above wiped that hook out — resurrect and continuum were installed and
-      # configured but had never saved a single session
-      # (~/.local/share/tmux/resurrect did not even exist).
+      # above wiped that hook out, so the *periodic* save never ran. Evidence:
+      # ~/.tmux/resurrect held 4 saves across 100 days (17 Apr, 24 Apr, 13 Jun,
+      # 25 Jul) — the fingerprint of occasional manual `prefix + C-s`, not of a
+      # 15-minute timer, which would have left hundreds.
       #
       # Re-running continuum.tmux here would restore the hook, but it would
       # also re-run start_auto_restore_in_background and
