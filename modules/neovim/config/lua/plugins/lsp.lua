@@ -153,7 +153,17 @@ vim.lsp.enable({
 })
 
 -- ── Completion ──────────────────────────────────────────────────────────────
-require('luasnip.loaders.from_vscode').lazy_load()
+-- `lazy_load()` is only lazy about *scanning* snippet directories — the
+-- require itself pulls in luasnip's parser and node modules eagerly, which
+-- measured ~67ms of a 213ms startup. Nothing can request a snippet before the
+-- first InsertEnter, so defer the whole thing to then.
+vim.api.nvim_create_autocmd('InsertEnter', {
+  once = true,
+  group = vim.api.nvim_create_augroup('andrevim_snippets', { clear = true }),
+  callback = function()
+    require('luasnip.loaders.from_vscode').lazy_load()
+  end,
+})
 
 require('blink.cmp').setup({
   keymap = {
