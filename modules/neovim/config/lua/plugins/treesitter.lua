@@ -10,8 +10,11 @@ require'nvim-treesitter.configs'.setup {
 
   highlight = {
     enable = true,
+    -- Disable treesitter highlighting only on pathologically large files.
+    -- This config is treesitter-only (no legacy vim regex syntax fallback),
+    -- so too low a cap leaves normal source files completely unhighlighted.
     disable = function(_, bufnr)
-      return vim.api.nvim_buf_line_count(bufnr) > 650
+      return vim.api.nvim_buf_line_count(bufnr) > 10000
     end,
 
     -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
@@ -98,16 +101,26 @@ require'nvim-treesitter.configs'.setup {
   },
 }
 
--- Fix for neotest: Set parser directory so child processes can find Nix-managed parsers
+-- Fix for neotest: its child processes don't inherit our runtimepath, so they
+-- can't find the Nix-managed parsers. Mirror them into a stable directory.
+--
+-- The mirroring shells out, so it runs deferred rather than on the startup
+-- path — the parsers are only needed once neotest actually spawns something.
 local parser_install_dir = vim.fn.stdpath("data") .. "/nix-treesitter-parsers"
-vim.fn.mkdir(parser_install_dir, "p")
-
--- Create symlinks to Nix parsers for neotest child processes
-local parser_path = vim.api.nvim_get_runtime_file("parser", false)[1]
-if parser_path then
-  vim.fn.system(string.format("ln -sfn %s/* %s/", parser_path, parser_install_dir))
-end
-
--- Add to parser path
 vim.opt.runtimepath:append(parser_install_dir)
+
+vim.defer_fn(function()
+  local parser_path = vim.api.nvim_get_runtime_file("parser", false)[1]
+  if not parser_path then return end
+
+  -- Skip the shell-out when the mirror is already pointed at this store path;
+  -- it only changes when the neovim derivation is rebuilt.
+  local stamp = parser_install_dir .. "/.source"
+  local current = (vim.fn.filereadable(stamp) == 1) and vim.fn.readfile(stamp)[1] or nil
+  if current == parser_path then return end
+
+  vim.fn.mkdir(parser_install_dir, "p")
+  vim.fn.system(string.format("ln -sfn %s/* %s/", parser_path, parser_install_dir))
+  vim.fn.writefile({ parser_path }, stamp)
+end, 500)
 

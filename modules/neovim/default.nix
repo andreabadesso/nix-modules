@@ -34,22 +34,35 @@ in
         tree-sitter
         gcc
         nodejs
+        ripgrep
+        fd # telescope/snacks use it for file listing when present
+
+        # ── Language servers ──
         lua-language-server
         nil
         nodePackages.typescript-language-server
+        # Provides html, cssls, jsonls *and* eslint — all four are enabled in
+        # lua/plugins/lsp.lua.
         nodePackages.vscode-langservers-extracted
-        nodePackages.prettier
-        nodePackages.eslint_d
         elixir
         erlang
 
+        # ── Formatters (see lua/plugins/conform.lua) ──
+        nodePackages.prettier
+        nodePackages.eslint_d
         stylua
         black
         nixpkgs-fmt
-        ripgrep
+        shfmt
       ];
 
       plugins = with pkgs.vimPlugins; [
+        # lua/plugins/lsp.lua drives servers through the native vim.lsp.config
+        # API, but that API still resolves each server's cmd/root_markers from
+        # nvim-lspconfig's `lsp/` directory. This was only ever present as a
+        # transitive dependency of typescript-nvim — if that plugin were
+        # dropped, every LSP would have silently stopped starting.
+        nvim-lspconfig
         fidget-nvim
         blink-cmp
         luasnip

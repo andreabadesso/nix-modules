@@ -1,109 +1,160 @@
--- Language servers are managed through Nix (see nvim.nix extraPackages)
--- Using native vim.lsp.config (Neovim 0.11+) instead of deprecated lspconfig
+-- Language servers are installed by Nix (see modules/neovim/default.nix
+-- `extraPackages`); their *definitions* (cmd, root_markers, filetypes) come
+-- from nvim-lspconfig's `lsp/` directory. This file only layers settings and
+-- keymaps on top, via the native vim.lsp.config API (Neovim 0.11+).
 
+-- ── Diagnostics ─────────────────────────────────────────────────────────────
+-- Neovim 0.11 ships with virtual_text OFF by default, so an unconfigured setup
+-- surfaces errors only in the sign column. Make them visible and sorted.
+vim.diagnostic.config({
+  severity_sort = true,
+  underline = { severity = { min = vim.diagnostic.severity.WARN } },
+  virtual_text = {
+    spacing = 2,
+    prefix = "●",
+    severity = { min = vim.diagnostic.severity.WARN },
+  },
+  float = {
+    source = true,
+    header = "",
+    prefix = "",
+  },
+  signs = {
+    text = {
+      [vim.diagnostic.severity.ERROR] = "E",
+      [vim.diagnostic.severity.WARN]  = "W",
+      [vim.diagnostic.severity.INFO]  = "I",
+      [vim.diagnostic.severity.HINT]  = "H",
+    },
+  },
+})
+
+-- ── Capabilities ────────────────────────────────────────────────────────────
 local capabilities = vim.lsp.protocol.make_client_capabilities()
-
--- Get capabilities from blink.cmp if available
 local has_blink, blink = pcall(require, 'blink.cmp')
 if has_blink then
   capabilities = blink.get_lsp_capabilities(capabilities)
 end
 
-local on_attach = function(client, bufnr)
-  local opts = { noremap=true, silent=true, buffer=bufnr }
+-- Applies to every server, including ones enabled by a plugin rather than here.
+vim.lsp.config('*', { capabilities = capabilities })
 
-  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
-  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
-  vim.keymap.set('n', 'gT', vim.lsp.buf.type_definition, opts)
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-  vim.keymap.set('n', '<leader>vws', vim.lsp.buf.workspace_symbol, opts)
-  vim.keymap.set('n', '<leader>vd', vim.diagnostic.open_float, opts)
-  vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
-  vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
-  vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
-  vim.keymap.set('n', '<leader>rf', '<cmd>Telescope lsp_references<cr>', opts)
-  vim.keymap.set({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, opts)
-  vim.keymap.set('n', '<leader>ih', function()
-    vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }), { bufnr = bufnr })
-  end, { buffer = bufnr, desc = "Toggle inlay hints" })
+-- ── Buffer-local keymaps ────────────────────────────────────────────────────
+-- LspAttach is the supported hook in 0.11+. A per-server `on_attach` silently
+-- skips any server this file doesn't configure by hand.
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('andrevim_lsp_attach', { clear = true }),
+  callback = function(ev)
+    local bufnr = ev.buf
+    local function map(mode, lhs, rhs, desc)
+      vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, silent = true, desc = desc })
+    end
 
-  vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-end
+    map('n', 'gd', vim.lsp.buf.definition, "Go to definition")
+    map('n', 'gD', vim.lsp.buf.declaration, "Go to declaration")
+    map('n', 'gi', vim.lsp.buf.implementation, "Go to implementation")
+    map('n', 'gT', vim.lsp.buf.type_definition, "Go to type definition")
+    map('n', 'K', vim.lsp.buf.hover, "Hover docs")
+    map('i', '<C-k>', vim.lsp.buf.signature_help, "Signature help")
 
--- Configure LSP servers using native vim.lsp.config
-vim.lsp.config('ts_ls', {
-  on_attach = on_attach,
-  capabilities = capabilities,
-  settings = {
-    typescript = {
-      inlayHints = {
-        includeInlayParameterNameHints = "all",
-        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        includeInlayFunctionParameterTypeHints = true,
-        includeInlayVariableTypeHints = true,
-        includeInlayPropertyDeclarationTypeHints = true,
-        includeInlayFunctionLikeReturnTypeHints = true,
-      },
-    },
-    javascript = {
-      inlayHints = {
-        includeInlayParameterNameHints = "all",
-        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        includeInlayFunctionParameterTypeHints = true,
-        includeInlayVariableTypeHints = true,
-        includeInlayPropertyDeclarationTypeHints = true,
-        includeInlayFunctionLikeReturnTypeHints = true,
-      },
-    },
-  },
+    map('n', '<leader>rn', vim.lsp.buf.rename, "Rename symbol")
+    map({ 'n', 'v' }, '<leader>ca', vim.lsp.buf.code_action, "Code action")
+    map('n', '<leader>rf', '<cmd>Telescope lsp_references<cr>', "References")
+    map('n', '<leader>vws', vim.lsp.buf.workspace_symbol, "Workspace symbols")
+
+    -- Diagnostics. `vim.diagnostic.goto_prev`/`goto_next` are deprecated as of
+    -- 0.11 and slated for removal; `jump` is the replacement.
+    map('n', '<leader>vd', vim.diagnostic.open_float, "Line diagnostics")
+    map('n', '[d', function() vim.diagnostic.jump({ count = -1, float = true }) end, "Previous diagnostic")
+    map('n', ']d', function() vim.diagnostic.jump({ count = 1, float = true }) end, "Next diagnostic")
+    map('n', '[e', function()
+      vim.diagnostic.jump({ count = -1, float = true, severity = vim.diagnostic.severity.ERROR })
+    end, "Previous error")
+    map('n', ']e', function()
+      vim.diagnostic.jump({ count = 1, float = true, severity = vim.diagnostic.severity.ERROR })
+    end, "Next error")
+
+    map('n', '<leader>ih', function()
+      vim.lsp.inlay_hint.enable(
+        not vim.lsp.inlay_hint.is_enabled({ bufnr = bufnr }), { bufnr = bufnr }
+      )
+    end, "Toggle inlay hints")
+
+    -- Highlight the other references to the symbol under the cursor.
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
+    if client and client:supports_method('textDocument/documentHighlight') then
+      local hl_group = vim.api.nvim_create_augroup('andrevim_lsp_highlight', { clear = false })
+      vim.api.nvim_clear_autocmds({ group = hl_group, buffer = bufnr })
+      vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+        group = hl_group,
+        buffer = bufnr,
+        callback = vim.lsp.buf.document_highlight,
+      })
+      vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+        group = hl_group,
+        buffer = bufnr,
+        callback = vim.lsp.buf.clear_references,
+      })
+    end
+  end,
 })
 
-vim.lsp.config('jsonls', {
-  on_attach = on_attach,
-  capabilities = capabilities,
+-- ── Per-server settings ─────────────────────────────────────────────────────
+local ts_inlay_hints = {
+  includeInlayParameterNameHints = "all",
+  includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+  includeInlayFunctionParameterTypeHints = true,
+  includeInlayVariableTypeHints = true,
+  includeInlayPropertyDeclarationTypeHints = true,
+  includeInlayFunctionLikeReturnTypeHints = true,
+}
+
+vim.lsp.config('ts_ls', {
+  settings = {
+    typescript = { inlayHints = ts_inlay_hints },
+    javascript = { inlayHints = ts_inlay_hints },
+  },
 })
 
 vim.lsp.config('lua_ls', {
-  on_attach = on_attach,
-  capabilities = capabilities,
   settings = {
     Lua = {
-      runtime = {
-        version = 'LuaJIT'
-      },
-      diagnostics = {
-        globals = {'vim'},
-      },
+      runtime = { version = 'LuaJIT' },
+      diagnostics = { globals = { 'vim', 'Snacks' } },
       workspace = {
         library = vim.api.nvim_get_runtime_file("", true),
+        checkThirdParty = false,
       },
-      telemetry = {
-        enable = false,
-      },
+      hint = { enable = true },
+      telemetry = { enable = false },
     },
   },
 })
 
-vim.lsp.config('nil_ls', {
-  on_attach = on_attach,
-  capabilities = capabilities,
-})
-
+-- `expert` is the Elixir language server. It has no nvim-lspconfig definition,
+-- so the full config (cmd/filetypes/root_markers) has to live here.
 vim.lsp.config('expert', {
-  on_attach = on_attach,
-  capabilities = capabilities,
   cmd = { 'expert', '--stdio' },
   filetypes = { 'elixir', 'eelixir', 'heex', 'surface' },
   root_markers = { 'mix.exs' },
 })
 
--- Enable the language servers
-vim.lsp.enable({'ts_ls', 'jsonls', 'lua_ls', 'nil_ls', 'expert'})
+-- html/cssls/eslint/jsonls all come out of vscode-langservers-extracted, which
+-- was already being installed but only half used.
+vim.lsp.enable({
+  'ts_ls',
+  'jsonls',
+  'html',
+  'cssls',
+  'eslint',
+  'lua_ls',
+  'nil_ls',
+  'expert',
+})
 
--- Load snippets for blink.cmp
+-- ── Completion ──────────────────────────────────────────────────────────────
 require('luasnip.loaders.from_vscode').lazy_load()
 
--- Setup blink.cmp (modern completion)
 require('blink.cmp').setup({
   keymap = {
     preset = 'default',
@@ -119,7 +170,6 @@ require('blink.cmp').setup({
     ['<C-u>'] = { 'scroll_documentation_up', 'fallback' },
   },
   appearance = {
-    use_nvim_cmp_as_default = true,
     nerd_font_variant = 'mono',
   },
   sources = {
@@ -133,7 +183,6 @@ require('blink.cmp').setup({
       auto_brackets = { enabled = true },
     },
     menu = {
-      border = 'rounded',
       draw = {
         columns = { { 'label', 'label_description', gap = 1 }, { 'kind_icon', 'kind' } },
       },
@@ -141,22 +190,15 @@ require('blink.cmp').setup({
     documentation = {
       auto_show = true,
       auto_show_delay_ms = 200,
-      window = { border = 'rounded' },
     },
     ghost_text = { enabled = true },
   },
   signature = {
     enabled = true,
-    window = { border = 'rounded' },
   },
+  -- The `luasnip` preset wires expand/jump/active for us; the hand-rolled
+  -- versions this replaces got `active` subtly wrong (ignored the filter).
   snippets = {
-    expand = function(snippet) require('luasnip').lsp_expand(snippet) end,
-    active = function(filter)
-      if filter and filter.direction then
-        return require('luasnip').jumpable(filter.direction)
-      end
-      return require('luasnip').in_snippet()
-    end,
-    jump = function(direction) require('luasnip').jump(direction) end,
+    preset = 'luasnip',
   },
 })

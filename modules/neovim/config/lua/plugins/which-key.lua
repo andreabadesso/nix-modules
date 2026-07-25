@@ -20,6 +20,7 @@ require("which-key").setup({
     breadcrumb = ">>",
     separator = "->",
     group = "+",
+    mappings = false, -- no icon column; keeps the popup narrow in a tmux pane
   },
   win = {
     border = "rounded",
@@ -34,17 +35,25 @@ require("which-key").setup({
   show_keys = true,
 })
 
--- Register key groups for better organization
+-- Group labels. These are kept in sync with what the plugin files actually
+-- map — the previous list advertised prefixes that no longer existed and
+-- mislabelled <leader>n (neo-tree lives there too, not just notifications).
 require("which-key").add({
-  { "<leader>f", group = "Find/Files" },
+  { "<leader>b", group = "Buffer" },
+  { "<leader>c", group = "Claude Code / Code" },
+  { "<leader>cd", group = "Claude diff" },
+  { "<leader>d", group = "Diffview" },
+  { "<leader>f", group = "Find / Format" },
   { "<leader>g", group = "Git" },
-  { "<leader>h", group = "Hunk/Git" },
-  { "<leader>j", group = "Test (Jest)" },
-  { "<leader>t", group = "Terminal/Toggle" },
-  { "<leader>x", group = "Trouble/Diagnostics" },
-  { "<leader>c", group = "Claude Code" },
-  { "<leader>cd", group = "Claude Diff" },
-  { "<leader>v", group = "View/LSP" },
+  { "<leader>h", group = "Git hunks" },
+  { "<leader>j", group = "Tests (Jest)" },
   { "<leader>m", group = "Harpoon marks" },
-  { "<leader>n", group = "Notifications" },
+  { "<leader>n", group = "Notifications / Tree" },
+  { "<leader>r", group = "Rename / References" },
+  { "<leader>t", group = "Terminal / Toggles" },
+  { "<leader>u", group = "UI toggles" },
+  { "<leader>v", group = "View / LSP" },
+  { "<leader>x", group = "Trouble / Diagnostics" },
+  { "[", group = "Previous" },
+  { "]", group = "Next" },
 })
