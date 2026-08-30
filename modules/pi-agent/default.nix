@@ -31,22 +31,17 @@ let
   };
 in
 {
-  # `pi` is a wrapper, not the raw binary: it pulls the API key out of gopass
-  # at launch and exports it only into the pi process, so the secret never
-  # touches the nix store, shell rc files, or `ps` output (which `--api-key`
-  # would). The key is exported under every provider name pi understands
-  # because the gopass entry doesn't say which provider it belongs to; pi
-  # only reads the one matching the selected provider. Trim this list once
-  # the provider is settled. If gopass fails (no pinentry, key absent), pi
-  # still starts — subscription `/login` keeps working.
+  # `pi` is a wrapper, not the raw binary: it pulls the OpenRouter key out of
+  # gopass at launch and exports it only into the pi process, so the secret
+  # never touches the nix store, shell rc files, or `ps` output (which
+  # `--api-key` would). An OPENROUTER_API_KEY already set in the environment
+  # wins. If gopass fails (no pinentry, key absent), pi still starts —
+  # subscription `/login` keeps working.
   home.packages = [
     (pkgs.writeShellScriptBin "pi" ''
-      if key="$(${pkgs.gopass}/bin/gopass show -o piloto-harness-key 2>/dev/null)"; then
-        for var in OPENROUTER_API_KEY OPENAI_API_KEY DEEPSEEK_API_KEY \
-                   GOOGLE_API_KEY XAI_API_KEY GROQ_API_KEY \
-                   MISTRAL_API_KEY MOONSHOT_API_KEY; do
-          [ -n "''${!var:-}" ] || export "$var=$key"
-        done
+      if [ -z "''${OPENROUTER_API_KEY:-}" ]; then
+        key="$(${pkgs.gopass}/bin/gopass show -o piloto-harness-key 2>/dev/null)" \
+          && export OPENROUTER_API_KEY="$key"
       fi
       exec ${unstable.pi-coding-agent}/bin/pi "$@"
     '')

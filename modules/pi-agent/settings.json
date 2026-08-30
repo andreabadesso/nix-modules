@@ -1,4 +1,5 @@
 {
+  "defaultProvider": "openrouter",
   "skills": ["~/.claude/skills"],
   "enableSkillCommands": true,
   "packages": [
