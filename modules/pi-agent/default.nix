@@ -19,8 +19,9 @@
 #   - settings.json is a read-only symlink: in-app commands that persist
 #     settings (e.g. /theme) will fail to write. Edit settings.json here
 #     and rebuild instead.
-#   - API keys are NOT managed here. Export the provider key in the shell
-#     (e.g. OPENROUTER_API_KEY, DEEPSEEK_API_KEY) or use `pi /login`.
+#   - the API key comes from the `piloto-harness-key` gopass entry, fetched
+#     by the `pi` wrapper at launch (see below). No key, no problem: pi
+#     starts anyway and `/login` still works.
 { pkgs, config, nixpkgs-unstable, ... }:
 
 let
@@ -30,7 +31,26 @@ let
   };
 in
 {
-  home.packages = [ unstable.pi-coding-agent ];
+  # `pi` is a wrapper, not the raw binary: it pulls the API key out of gopass
+  # at launch and exports it only into the pi process, so the secret never
+  # touches the nix store, shell rc files, or `ps` output (which `--api-key`
+  # would). The key is exported under every provider name pi understands
+  # because the gopass entry doesn't say which provider it belongs to; pi
+  # only reads the one matching the selected provider. Trim this list once
+  # the provider is settled. If gopass fails (no pinentry, key absent), pi
+  # still starts — subscription `/login` keeps working.
+  home.packages = [
+    (pkgs.writeShellScriptBin "pi" ''
+      if key="$(${pkgs.gopass}/bin/gopass show -o piloto-harness-key 2>/dev/null)"; then
+        for var in OPENROUTER_API_KEY OPENAI_API_KEY DEEPSEEK_API_KEY \
+                   GOOGLE_API_KEY XAI_API_KEY GROQ_API_KEY \
+                   MISTRAL_API_KEY MOONSHOT_API_KEY; do
+          [ -n "''${!var:-}" ] || export "$var=$key"
+        done
+      fi
+      exec ${unstable.pi-coding-agent}/bin/pi "$@"
+    '')
+  ];
 
   home.file.".pi/agent/settings.json".source = ./settings.json;
 
