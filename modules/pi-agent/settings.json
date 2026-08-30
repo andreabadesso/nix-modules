@@ -1,0 +1,12 @@
+{
+  "skills": ["~/.claude/skills"],
+  "enableSkillCommands": true,
+  "packages": [
+    "npm:pi-subagents",
+    "npm:pi-web-access",
+    "npm:pi-mcp-adapter",
+    "npm:@narumitw/pi-plan-mode"
+  ],
+  "defaultThinkingLevel": "high",
+  "theme": "dark"
+}
