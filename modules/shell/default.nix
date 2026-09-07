@@ -68,19 +68,6 @@
         KEYTIMEOUT=10
       '')
 
-      # ctrl+backspace deletes the previous word. Inside herdr panes the key
-      # arrives as legacy ^H (0x08), which zsh binds to backward-delete-char
-      # — one character. Plain backspace is a different key (0x7f), so
-      # rebinding ^H costs nothing; the kitty-protocol CSI-u form is bound
-      # too for terminals that send it. Insert-mode maps only: in vicmd,
-      # ^H stays backward-char.
-      (lib.mkOrder 600 ''
-        bindkey -M viins '^H' backward-kill-word
-        bindkey -M viins '\e[27;5;127~' backward-kill-word
-        bindkey -M emacs '^H' backward-kill-word
-        bindkey -M emacs '\e[27;5;127~' backward-kill-word
-      '')
-
       # Obsidian Aurora Prompt
       (lib.mkOrder 800 ''
         autoload -Uz vcs_info
@@ -94,6 +81,7 @@
         RPROMPT='%(?..%F{#ff7b72}✘ %?%f)'
       '')
 
+
       (lib.mkOrder 1000 ''
         # Auto-start tmux, but only for a real interactive terminal. Without
         # the `-t 0` check this fires for non-tty shells too (scp, rsync,
@@ -106,6 +94,22 @@
         fi
       '')
     ];
+      # ctrl+backspace deletes the previous word. Inside herdr panes the key
+      # arrives as legacy ^H (0x08), which zsh binds to backward-delete-char
+      # — one character. Plain backspace is a different key (0x7f), so
+      # rebinding ^H costs nothing; the kitty-protocol CSI-u form is bound
+      # too for terminals that send it. Insert-mode maps only: in vicmd,
+      # ^H stays backward-char.
+      #
+      # Bound in initExtra, AFTER the prezto source: prezto's editor module
+      # re-initializes the keymaps (bindkey -v), wiping anything bound in
+      # initContent blocks, which all render before it.
+      programs.zsh.initExtra = ''
+        bindkey -M viins '^H' backward-kill-word
+        bindkey -M viins '\e[27;5;127~' backward-kill-word
+        bindkey -M emacs '^H' backward-kill-word
+        bindkey -M emacs '\e[27;5;127~' backward-kill-word
+      '';
   };
 
   programs.bash.enable = true;
