@@ -98,17 +98,26 @@
       # arrives as legacy ^H (0x08), which zsh binds to backward-delete-char
       # — one character. Plain backspace is a different key (0x7f), so
       # rebinding ^H costs nothing; the kitty-protocol CSI-u form is bound
-      # too for terminals that send it. Insert-mode maps only: in vicmd,
-      # ^H stays backward-char.
+      # too for terminals that send it.
       #
-      # Bound in initExtra, AFTER the prezto source: prezto's editor module
-      # re-initializes the keymaps (bindkey -v), wiping anything bound in
-      # initContent blocks, which all render before it.
+      # Deferred to the first prompt: herdr panes end init with an emacs
+      # main keymap (bindkey -A emacs main lands after every static binding
+      # in this file — source not pinned down, prezto suspected), so a hook
+      # bound after init is the only thing that reliably wins. It removes
+      # itself after the first run. vicmd is untouched: ^H stays
+      # backward-char there.
       programs.zsh.initExtra = ''
-        bindkey -M viins '^H' backward-kill-word
-        bindkey -M viins '\e[27;5;127~' backward-kill-word
-        bindkey -M emacs '^H' backward-kill-word
-        bindkey -M emacs '\e[27;5;127~' backward-kill-word
+        autoload -Uz add-zsh-hook
+        _herdr_ctrl_backspace_bind() {
+          bindkey -M viins '^H' backward-kill-word
+          bindkey -M viins '\e[27;5;127~' backward-kill-word
+          bindkey -M emacs '^H' backward-kill-word
+          bindkey -M emacs '\e[27;5;127~' backward-kill-word
+          bindkey '^H' backward-kill-word
+          bindkey '\e[27;5;127~' backward-kill-word
+          add-zsh-hook -d precmd _herdr_ctrl_backspace_bind
+        }
+        add-zsh-hook precmd _herdr_ctrl_backspace_bind
       '';
   };
 
