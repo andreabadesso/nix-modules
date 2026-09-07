@@ -106,7 +106,7 @@
       # bound after init is the only thing that reliably wins. It removes
       # itself after the first run. vicmd is untouched: ^H stays
       # backward-char there.
-      programs.zsh.initExtra = ''
+      initExtra = ''
         autoload -Uz add-zsh-hook
         _herdr_ctrl_backspace_bind() {
           bindkey -M viins '^H' backward-kill-word
