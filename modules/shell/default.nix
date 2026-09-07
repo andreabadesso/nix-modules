@@ -60,6 +60,12 @@
         setopt NO_HIST_BEEP
         unsetopt verbose
         unsetopt xtrace
+
+        # vi-mode typing lag: KEYTIMEOUT is the wait (in 10ms units) zsh does
+        # to tell Esc alone apart from escape-prefixed sequences (arrows send
+        # ^[OA/^[[A). Default 40 = 400ms of delay every time you leave insert
+        # mode; 10 = 100ms is enough for the sequence and kills the lag.
+        KEYTIMEOUT=10
       '')
 
       # Obsidian Aurora Prompt
