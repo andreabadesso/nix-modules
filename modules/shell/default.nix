@@ -79,7 +79,10 @@
         # Auto-start tmux, but only for a real interactive terminal. Without
         # the `-t 0` check this fires for non-tty shells too (scp, rsync,
         # `ssh host cmd`), which hangs the connection.
-        if [ -z "$TMUX" ] && [ -n "$PS1" ] && [ -t 0 ] && [[ ! "$TERM_PROGRAM" == "vscode" ]]; then
+        # HERDR_ENV=1 marks a pane living inside herdr, which sets it exactly
+        # so multiplexer auto-attach chains like this one stay out of its
+        # panes; without the check every herdr pane spawned a nested tmux.
+        if [ -z "$HERDR_ENV" ] && [ -z "$TMUX" ] && [ -n "$PS1" ] && [ -t 0 ] && [[ ! "$TERM_PROGRAM" == "vscode" ]]; then
           tmux attach-session -t default 2>/dev/null || tmux new-session -s default
         fi
       '')
