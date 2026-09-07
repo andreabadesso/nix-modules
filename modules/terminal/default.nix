@@ -3,11 +3,17 @@
 {
   # Ghostty config - package installed manually on macOS, via nixpkgs on Linux
   xdg.configFile."ghostty/config".text = ''
-    # Window
+    # Window / background
     window-padding-x = 16
     window-padding-y = 12
     window-decoration = none
-    window-opacity = 0.92
+    # NOTE: `window-opacity` was renamed in Ghostty 1.x and is silently
+    # ignored by current releases (the terminal stayed fully opaque). The
+    # live key is `background-opacity`. `background-opacity-cells` extends
+    # the translucency into cells that paint their own background (tmux,
+    # nvim) — without it those apps stay opaque by design.
+    background-opacity = 0.92
+    background-opacity-cells = true
     background-blur = true
     title = Ghostty
     
