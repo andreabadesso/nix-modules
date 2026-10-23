@@ -4,7 +4,7 @@ let
   cfg = config.programs.andrevim;
 
   pkgs-unstable = import nixpkgs-unstable {
-    system = pkgs.system;
+    system = pkgs.stdenv.hostPlatform.system;
     config.allowUnfree = true;
   };
 
@@ -40,16 +40,16 @@ in
         # ── Language servers ──
         lua-language-server
         nil
-        nodePackages.typescript-language-server
+        typescript-language-server
         # Provides html, cssls, jsonls *and* eslint — all four are enabled in
         # lua/plugins/lsp.lua.
-        nodePackages.vscode-langservers-extracted
+        vscode-langservers-extracted
         elixir
         erlang
 
         # ── Formatters (see lua/plugins/conform.lua) ──
-        nodePackages.prettier
-        nodePackages.eslint_d
+        prettier
+        eslint_d
         stylua
         black
         nixpkgs-fmt
@@ -124,7 +124,7 @@ in
         pkgs-unstable.vimPlugins.claudecode-nvim
       ];
 
-      extraLuaConfig = builtins.readFile ./config/init.lua;
+      initLua = builtins.readFile ./config/init.lua;
     };
   };
 }

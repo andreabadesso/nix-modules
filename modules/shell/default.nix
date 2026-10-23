@@ -93,7 +93,7 @@
           tmux attach-session -t default 2>/dev/null || tmux new-session -s default
         fi
       '')
-    ];
+
       # ctrl+backspace deletes the previous word. Inside herdr panes the key
       # arrives as legacy ^H (0x08), which zsh binds to backward-delete-char
       # — one character. Plain backspace is a different key (0x7f), so
@@ -106,7 +106,7 @@
       # bound after init is the only thing that reliably wins. It removes
       # itself after the first run. vicmd is untouched: ^H stays
       # backward-char there.
-      initExtra = ''
+      (lib.mkOrder 1000 ''
         autoload -Uz add-zsh-hook
         _herdr_ctrl_backspace_bind() {
           bindkey -M viins '^H' backward-kill-word
@@ -118,7 +118,8 @@
           add-zsh-hook -d precmd _herdr_ctrl_backspace_bind
         }
         add-zsh-hook precmd _herdr_ctrl_backspace_bind
-      '';
+      '')
+    ];
   };
 
   programs.bash.enable = true;
