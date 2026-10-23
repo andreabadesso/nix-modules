@@ -1,105 +1,105 @@
--- On NixOS, parsers are managed by Nix, so disable auto-installation
-require'nvim-treesitter.configs'.setup {
-  -- Parsers are handled by Nix configuration, so this list is mainly for reference
-  -- The actual parsers are installed via nixpkgs.vimPlugins.nvim-treesitter.withPlugins
-  ensure_installed = {},
+-- nvim-treesitter's `main` branch (what nixpkgs ships since 26.05) dropped
+-- the `nvim-treesitter.configs` module system. Parsers still come from Nix
+-- (nvim-treesitter.withPlugins); highlighting is started by hand with the
+-- core vim.treesitter API, and textobjects get explicit keymaps.
 
-  -- Disable automatic installation since parsers are managed by Nix
-  sync_install = false,
-  auto_install = false,
+-- Highlighting. Treesitter-only (no legacy vim regex syntax fallback), so
+-- too low a size cap leaves normal source files completely unhighlighted.
+vim.api.nvim_create_autocmd("FileType", {
+  group = vim.api.nvim_create_augroup("nix_treesitter_highlight", { clear = true }),
+  callback = function(args)
+    if vim.api.nvim_buf_line_count(args.buf) > 10000 then return end
+    -- pcall: filetypes without a parser (help popups, plugin UIs) just skip.
+    pcall(vim.treesitter.start, args.buf)
+  end,
+})
 
-  highlight = {
-    enable = true,
-    -- Disable treesitter highlighting only on pathologically large files.
-    -- This config is treesitter-only (no legacy vim regex syntax fallback),
-    -- so too low a cap leaves normal source files completely unhighlighted.
-    disable = function(_, bufnr)
-      return vim.api.nvim_buf_line_count(bufnr) > 10000
-    end,
-
-    -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
-    -- Using this option may slow down your editor, and you may see some duplicate highlights.
-    -- Instead of true it can also be a list of languages
-    additional_vim_regex_highlighting = false,
+-- Textobjects
+require("nvim-treesitter-textobjects").setup {
+  select = {
+    lookahead = true, -- Automatically jump forward to textobj
+    selection_modes = {
+      ['@parameter.outer'] = 'v',
+      ['@function.outer'] = 'V',
+      ['@class.outer'] = 'V',
+    },
+    include_surrounding_whitespace = true,
   },
-
-  -- Treesitter textobjects for smart selections
-  textobjects = {
-    select = {
-      enable = true,
-      lookahead = true, -- Automatically jump forward to textobj
-      keymaps = {
-        -- Function textobjects
-        ["af"] = { query = "@function.outer", desc = "Select around function" },
-        ["if"] = { query = "@function.inner", desc = "Select inside function" },
-        -- Class textobjects
-        ["ac"] = { query = "@class.outer", desc = "Select around class" },
-        ["ic"] = { query = "@class.inner", desc = "Select inside class" },
-        -- Parameter/argument textobjects
-        ["aa"] = { query = "@parameter.outer", desc = "Select around argument" },
-        ["ia"] = { query = "@parameter.inner", desc = "Select inside argument" },
-        -- Block textobjects
-        ["ab"] = { query = "@block.outer", desc = "Select around block" },
-        ["ib"] = { query = "@block.inner", desc = "Select inside block" },
-        -- Conditional textobjects
-        ["ai"] = { query = "@conditional.outer", desc = "Select around conditional" },
-        ["ii"] = { query = "@conditional.inner", desc = "Select inside conditional" },
-        -- Loop textobjects
-        ["al"] = { query = "@loop.outer", desc = "Select around loop" },
-        ["il"] = { query = "@loop.inner", desc = "Select inside loop" },
-        -- Comment textobjects
-        ["a/"] = { query = "@comment.outer", desc = "Select around comment" },
-      },
-      selection_modes = {
-        ['@parameter.outer'] = 'v',
-        ['@function.outer'] = 'V',
-        ['@class.outer'] = 'V',
-      },
-      include_surrounding_whitespace = true,
-    },
-    move = {
-      enable = true,
-      set_jumps = true, -- Whether to set jumps in the jumplist
-      goto_next_start = {
-        ["]m"] = { query = "@function.outer", desc = "Next function start" },
-        ["]]"] = { query = "@class.outer", desc = "Next class start" },
-        ["]a"] = { query = "@parameter.inner", desc = "Next argument" },
-      },
-      goto_next_end = {
-        ["]M"] = { query = "@function.outer", desc = "Next function end" },
-        ["]["] = { query = "@class.outer", desc = "Next class end" },
-      },
-      goto_previous_start = {
-        ["[m"] = { query = "@function.outer", desc = "Previous function start" },
-        ["[["] = { query = "@class.outer", desc = "Previous class start" },
-        ["[a"] = { query = "@parameter.inner", desc = "Previous argument" },
-      },
-      goto_previous_end = {
-        ["[M"] = { query = "@function.outer", desc = "Previous function end" },
-        ["[]"] = { query = "@class.outer", desc = "Previous class end" },
-      },
-    },
-    swap = {
-      enable = true,
-      swap_next = {
-        ["<leader>a"] = { query = "@parameter.inner", desc = "Swap with next argument" },
-      },
-      swap_previous = {
-        ["<leader>A"] = { query = "@parameter.inner", desc = "Swap with previous argument" },
-      },
-    },
-  },
-
-  incremental_selection = {
-    enable = true,
-    keymaps = {
-      init_selection = "<C-space>",
-      node_incremental = "<C-space>",
-      scope_incremental = false,
-      node_decremental = "<bs>",
-    },
+  move = {
+    set_jumps = true, -- Whether to set jumps in the jumplist
   },
 }
+
+local select = require("nvim-treesitter-textobjects.select")
+for lhs, spec in pairs({
+  -- Function textobjects
+  ["af"] = { "@function.outer", "Select around function" },
+  ["if"] = { "@function.inner", "Select inside function" },
+  -- Class textobjects
+  ["ac"] = { "@class.outer", "Select around class" },
+  ["ic"] = { "@class.inner", "Select inside class" },
+  -- Parameter/argument textobjects
+  ["aa"] = { "@parameter.outer", "Select around argument" },
+  ["ia"] = { "@parameter.inner", "Select inside argument" },
+  -- Block textobjects
+  ["ab"] = { "@block.outer", "Select around block" },
+  ["ib"] = { "@block.inner", "Select inside block" },
+  -- Conditional textobjects
+  ["ai"] = { "@conditional.outer", "Select around conditional" },
+  ["ii"] = { "@conditional.inner", "Select inside conditional" },
+  -- Loop textobjects
+  ["al"] = { "@loop.outer", "Select around loop" },
+  ["il"] = { "@loop.inner", "Select inside loop" },
+  -- Comment textobjects
+  ["a/"] = { "@comment.outer", "Select around comment" },
+}) do
+  vim.keymap.set({ "x", "o" }, lhs, function()
+    select.select_textobject(spec[1], "textobjects")
+  end, { desc = spec[2] })
+end
+
+local move = require("nvim-treesitter-textobjects.move")
+for fn, maps in pairs({
+  goto_next_start = {
+    ["]m"] = { "@function.outer", "Next function start" },
+    ["]]"] = { "@class.outer", "Next class start" },
+    ["]a"] = { "@parameter.inner", "Next argument" },
+  },
+  goto_next_end = {
+    ["]M"] = { "@function.outer", "Next function end" },
+    ["]["] = { "@class.outer", "Next class end" },
+  },
+  goto_previous_start = {
+    ["[m"] = { "@function.outer", "Previous function start" },
+    ["[["] = { "@class.outer", "Previous class start" },
+    ["[a"] = { "@parameter.inner", "Previous argument" },
+  },
+  goto_previous_end = {
+    ["[M"] = { "@function.outer", "Previous function end" },
+    ["[]"] = { "@class.outer", "Previous class end" },
+  },
+}) do
+  for lhs, spec in pairs(maps) do
+    vim.keymap.set({ "n", "x", "o" }, lhs, function()
+      move[fn](spec[1], "textobjects")
+    end, { desc = spec[2] })
+  end
+end
+
+local swap = require("nvim-treesitter-textobjects.swap")
+vim.keymap.set("n", "<leader>a", function()
+  swap.swap_next("@parameter.inner")
+end, { desc = "Swap with next argument" })
+vim.keymap.set("n", "<leader>A", function()
+  swap.swap_previous("@parameter.inner")
+end, { desc = "Swap with previous argument" })
+
+-- Incremental selection: the plugin module is gone, but nvim 0.12 ships the
+-- same thing in core as visual-mode `an` (parent node) and `in` (child node).
+-- Keep the old keys on top of it.
+vim.keymap.set("n", "<C-space>", "van", { remap = true, desc = "Start node selection" })
+vim.keymap.set("x", "<C-space>", "an", { remap = true, desc = "Expand to parent node" })
+vim.keymap.set("x", "<bs>", "in", { remap = true, desc = "Shrink to child node" })
 
 -- Fix for neotest: its child processes don't inherit our runtimepath, so they
 -- can't find the Nix-managed parsers. Mirror them into a stable directory.

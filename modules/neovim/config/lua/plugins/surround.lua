@@ -1,15 +1,4 @@
-require("nvim-surround").setup({
-  keymaps = {
-    insert = "<C-g>s",
-    insert_line = "<C-g>S",
-    normal = "ys",
-    normal_cur = "yss",
-    normal_line = "yS",
-    normal_cur_line = "ySS",
-    visual = "S",
-    visual_line = "gS",
-    delete = "ds",
-    change = "cs",
-    change_line = "cS",
-  },
-})
+-- nvim-surround v4 sets its keymaps on load; setup() only takes options now.
+-- The defaults are the ones this config used to spell out: ys/yss/yS/ySS,
+-- S/gS in visual, ds, cs/cS, <C-g>s/<C-g>S in insert.
+require("nvim-surround").setup({})
